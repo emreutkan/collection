@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New 52 Collection</title>
+<style>
+:root{--bg:#f6f6f4;--card:#fff;--fg:#1a1a1a;--mut:#6b6b6b;--line:#e2e2de;--acc:#0a5bd3;--chip:#eef1f6}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--card:#1d1d1d;--fg:#ececec;--mut:#9a9a9a;--line:#2e2e2e;--acc:#5b9bff;--chip:#262a31}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:24px 16px 8px;max-width:1300px;margin:auto}
+h1{margin:0 0 4px;font-size:26px}
+header p{margin:0;color:var(--mut)}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1300px;margin:auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}
+input[type=search]{flex:1 1 220px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit;font-size:13px}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+label.tg{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mut);cursor:pointer}
+#count{margin-left:auto;color:var(--mut);font-size:13px}
+main{max-width:1300px;margin:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:var(--line)}
+.meta{padding:8px 10px 10px}
+.no{color:var(--mut);font-size:12px}
+.t{font-weight:600;font-size:14px;margin:2px 0}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tag{font-size:11px;padding:2px 6px;border-radius:4px;background:var(--chip);color:var(--mut)}
+.empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:40px}
+dialog{border:0;padding:0;background:transparent;max-width:95vw;max-height:95vh}
+dialog::backdrop{background:rgba(0,0,0,.85)}
+dialog img{max-width:95vw;max-height:85vh;display:block;border-radius:6px}
+dialog p{color:#fff;text-align:center;margin:8px 0 0}
+@media (max-width:480px){main{grid-template-columns:repeat(2,1fr);gap:10px}}
+</style>
+</head>
+<body>
+<header>
+<h1>DC New 52 Collection</h1>
+<p>151 items &middot; single issues, variants, Futures End 3D covers and trade paperbacks. Tap a cover to enlarge.</p>
+</header>
+<div class="bar"><div class="bar-in">
+<input type="search" id="q" placeholder="Search title or issue..." aria-label="Search">
+<select id="fam" aria-label="Character family"><option value="">All families</option></select>
+<div class="chips" id="kinds"></div>
+<label class="tg"><input type="checkbox" id="nolg"> Hide 2015 &ldquo;DC You&rdquo; issues (no New 52 logo)</label>
+<select id="sort" aria-label="Sort"><option value="n">List order</option><option value="t">Title A&ndash;Z</option></select>
+<span id="count"></span>
+</div></div>
+<main id="grid"></main>
+<dialog id="dlg"><img id="big" alt=""><p id="cap"></p></dialog>
+<script>
+// [title, issue, variant, kind, family, imgNo, dcYou]
+const D=[
+["Batman","#13","","Regular","Batman",1469],["Batman","#14","","Regular","Batman",1588],["Batman","#15","","Regular","Batman",1587],["Batman","#16","","Regular","Batman",1586],["Batman","#17","","Regular","Batman",1585],["Batman","#20","","Regular","Batman",1584],["Batman","#32","Variant","Variant","Batman",1498],["Batman","#35","Monsters of the Month Variant","Variant","Batman",1592],["Batman","#40","","Regular","Batman",1617],
+["Batman: The Dark Knight","#0","","Regular","Batman",1456],["Batman: The Dark Knight","#10","","Regular","Batman",1526],["Batman: The Dark Knight","#11","","Regular","Batman",1524],["Batman: The Dark Knight","#12","","Regular","Batman",1565],["Batman: The Dark Knight","#13","","Regular","Batman",1519],["Batman: The Dark Knight","#14","","Regular","Batman",1492],["Batman: The Dark Knight","#15","","Regular","Batman",1491],["Batman: The Dark Knight","#19","","Regular","Batman",1455],["Batman: The Dark Knight","#20","","Regular","Batman",1454],["Batman: The Dark Knight","#21","","Regular","Batman",1453],
+["Batman and Robin","#35","Monsters of the Month Variant","Variant","Batman",1593],["Batman and Robin","#37","Darwyn Cooke Variant","Variant","Batman",1611],["Batman and Robin","#39","Harley Quinn Variant","Variant","Batman",1571],
+["Batman/Superman","#3.1 Doomsday","3D Cover","3D Cover","Batman",1534],["Batman/Superman","#15","Monsters of the Month Variant","Variant","Batman",1521],["Batman/Superman","#19","Harley Quinn Variant","Variant","Batman",1580],
+["Batman Beyond","#4","","Regular","Batman",1493,1],["Batman Beyond","#5","","Regular","Batman",1494,1],["Batman: Black and White","#2","","Regular","Batman",1495],
+["Detective Comics","#35","Monsters of the Month Variant","Variant","Batman",1594],["Detective Comics","#39","Harley Quinn Variant","Variant","Batman",1672],
+["Batgirl","#35","Monsters of the Month Variant","Variant","Batman",1595],["Batgirl","#39","Harley Quinn Variant","Variant","Batman",1675],
+["Grayson","#3","Monsters of the Month Variant","Variant","Batman",1591],["Grayson","#7","Harley Quinn Variant","Variant","Batman",1583],["Grayson Annual","#1","","Regular","Batman",1667],
+["Robin: Son of Batman","#1","","Regular","Batman",1459,1],["Robin: Son of Batman","#2","","Regular","Batman",1458,1],["Robin: Son of Batman","#3","","Regular","Batman",1457,1],["Robin: Son of Batman","#4","","Regular","Batman",1614,1],["Robin: Son of Batman","#5","","Regular","Batman",1607,1],["Robin: Son of Batman","#6","","Regular","Batman",1606,1],
+["Red Hood/Arsenal","#1","","Regular","Batman",1499,1],["Gotham Academy: Endgame","#1","","Regular","Batman",1443],["Birds of Prey","#0","","Regular","Batman",1485],
+["Black Canary","#1","","Regular","Batman",1464,1],["Black Canary","#2","","Regular","Batman",1463,1],["Black Canary","#3","","Regular","Batman",1462,1],["Black Canary","#4","","Regular","Batman",1461,1],["Black Canary","#5","","Regular","Batman",1460,1],
+["Harley Quinn","#12","LEGO Variant","Variant","Harley Quinn",1684],["Harley Quinn Annual","#1","","Regular","Harley Quinn",1662],["Harley Quinn Holiday Special","#1","","Regular","Harley Quinn",1666],
+["Harley Quinn and Power Girl","#1","","Regular","Harley Quinn",1605,1],["Harley Quinn and Power Girl","#2","","Regular","Harley Quinn",1604,1],["Harley Quinn and Power Girl","#3","","Regular","Harley Quinn",1603,1],["Harley Quinn and Power Girl","#4","","Regular","Harley Quinn",1484,1],
+["Justice League","#21","","Regular","Justice League",1523],["Justice League","#24","","Regular","Justice League",1522],["Justice League","#39","","Regular","Justice League",1538],["Justice League","#39","Harley Quinn Variant","Variant","Justice League",1579],["Justice League","#40","","Regular","Justice League",1537],
+["JLA: Justice League of America","#1","","Regular","Justice League",1468,1],["JLA: Justice League of America","#2","","Regular","Justice League",1467,1],["JLA: Justice League of America","#4","","Regular","Justice League",1466,1],["JLA: Justice League of America","#5","","Regular","Justice League",1465,1],
+["Justice League 3000","#1","","Regular","Justice League",1444],["Justice League United","#5","Monsters of the Month Variant","Variant","Justice League",1597],["Justice League United","#9","Harley Quinn Variant","Variant","Justice League",1671],["Justice League of America","#7.2 Killer Frost","3D Cover","3D Cover","Justice League",1535],
+["Superman","#35","Monsters of the Month Variant","Variant","Superman",1599],["Superman","#39","Harley Quinn Variant","Variant","Superman",1626],["Superman","#40","Movie Poster Variant","Variant","Superman",1634],
+["Action Comics","#35","Monsters of the Month Variant","Variant","Superman",1598],["Action Comics","#39","Harley Quinn Variant","Variant","Superman",1689],["Action Comics","#40","Movie Poster Variant","Variant","Superman",1632],
+["Superman/Wonder Woman","#12","Monsters of the Month Variant","Variant","Superman",1600],["Superman/Wonder Woman","#16","Harley Quinn Variant","Variant","Superman",1576],["Supergirl","#39","Harley Quinn Variant","Variant","Superman",1581],
+["Wonder Woman","#35","Monsters of the Month Variant","Variant","Wonder Woman",1520],["Wonder Woman","#39","Harley Quinn Variant","Variant","Wonder Woman",1630],
+["Green Lantern","#23.2 Lobo","3D Cover","3D Cover","Green Lantern",1527],["Green Lantern","#39","Harley Quinn Variant","Variant","Green Lantern",1578],["Green Lantern","#40","Movie Poster Variant","Variant","Green Lantern",1631],
+["Green Lantern Corps","#16","","Regular","Green Lantern",1529],["Green Lantern Corps","#35","Monsters of the Month Variant","Variant","Green Lantern",1601],["Green Lantern Corps","#39","Harley Quinn Variant","Variant","Green Lantern",1577],
+["Sinestro","#6","Monsters of the Month Variant","Variant","Green Lantern",1596],["Sinestro","#10","Harley Quinn Variant","Variant","Green Lantern",1677],["Sinestro","#11","Movie Poster Variant","Variant","Green Lantern",1633],
+["Green Arrow","#35","","Regular","Green Arrow",1557],["Green Arrow","#36","","Regular","Green Arrow",1556],["Green Arrow","#37","","Regular","Green Arrow",1624],["Green Arrow","#38","","Regular","Green Arrow",1623],["Green Arrow","#39","","Regular","Green Arrow",1622],["Green Arrow","#40","","Regular","Green Arrow",1621],["Green Arrow","#41","","Regular","Green Arrow",1476,1],["Green Arrow","#42","","Regular","Green Arrow",1477,1],["Green Arrow","#43","","Regular","Green Arrow",1478,1],["Green Arrow","#45","","Regular","Green Arrow",1616,1],["Green Arrow","#46","","Regular","Green Arrow",1615,1],["Green Arrow","#47","","Regular","Green Arrow",1558,1],
+["The Flash","#36","LEGO Variant","Variant","Flash",1683],["The Flash","#39","Harley Quinn Variant","Variant","Flash",1674],
+["Aquaman","#35","Monsters of the Month Variant","Variant","Aquaman",1602],["Aquaman","#39","Harley Quinn Variant","Variant","Aquaman",1676],
+["Teen Titans","#3","Monsters of the Month Variant","Variant","Other",1590],["Teen Titans","#7","Harley Quinn Variant","Variant","Other",1582],
+["Deathstroke","#0","","Regular","Other",1483],["Deathstroke","#1","","Regular","Other",1482],["Deathstroke","#2","","Regular","Other",1481],["Deathstroke","#3","","Regular","Other",1480],
+["Earth 2 Annual","#2","","Regular","Other",1496],["The Fury of Firestorm: The Nuclear Men","#4","","Regular","Other",1533],["Captain Atom","#1","","Regular","Other",1613],["Lobo","#1","","Regular","Other",1664],["National Comics: Looker","#1","","Regular","Other",1660],["Forever Evil Aftermath: Batman vs. Bane","#1","","Regular","Batman",1663],
+["Batman: Futures End","#1","3D Cover","3D Cover","Batman",1673],["Detective Comics: Futures End","#1","3D Cover","3D Cover","Batman",1646],["Batgirl: Futures End","#1","3D Cover","3D Cover","Batman",1649],["Catwoman: Futures End","#1","3D Cover","3D Cover","Batman",1510],["Catwoman: Futures End","#1","3D Cover (2nd copy)","3D Cover","Batman",1648],["Grayson: Futures End","#1","3D Cover","3D Cover","Batman",1658],["Harley Quinn: Futures End","#1","3D Cover","3D Cover","Harley Quinn",1609],["Harley Quinn: Futures End","#1","3D Cover (2nd copy)","3D Cover","Harley Quinn",1651],["Birds of Prey: Futures End","#1","3D Cover","3D Cover","Batman",1508],["Batman/Superman: Futures End","#1","3D Cover","3D Cover","Batman",1509],
+["Superman: Futures End","#1","3D Cover","3D Cover","Superman",1654],["Action Comics: Futures End","#1","3D Cover","3D Cover","Superman",1503],["Superboy: Futures End","#1","3D Cover","3D Cover","Superman",1502],["Supergirl: Futures End","#1","3D Cover","3D Cover","Superman",1501],["Superman/Wonder Woman: Futures End","#1","3D Cover","3D Cover","Superman",1655],["Wonder Woman: Futures End","#1","3D Cover","3D Cover","Wonder Woman",1653],
+["Justice League: Futures End","#1","3D Cover","3D Cover","Justice League",1507],["Justice League United: Futures End","#1","3D Cover","3D Cover","Justice League",1628],["Green Lantern: Futures End","#1","3D Cover","3D Cover","Green Lantern",1505],["Green Lantern Corps: Futures End","#1","3D Cover","3D Cover","Green Lantern",1504],["Sinestro: Futures End","#1","3D Cover","3D Cover","Green Lantern",1650],["The Flash: Futures End","#1","3D Cover","3D Cover","Flash",1627],["Aquaman: Futures End","#1","3D Cover","3D Cover","Aquaman",1647],["Aquaman and the Others: Futures End","#1","3D Cover","3D Cover","Aquaman",1652],
+["Earth 2: Futures End","#1","3D Cover","3D Cover","Other",1500],["Worlds' Finest: Futures End","#1","3D Cover","3D Cover","Other",1657],["Booster Gold: Futures End","#1","3D Cover","3D Cover","Other",1656],["Infinity Man and the Forever People: Futures End","#1","3D Cover","3D Cover","Other",1511],["Star Spangled War Stories feat. G.I. Zombie: Futures End","#1","3D Cover","3D Cover","Other",1506],
+["Green Arrow Vol. 1: The Midas Touch","TPB","","TPB","Green Arrow",1549],["Green Arrow Vol. 2: Triple Threat","TPB","","TPB","Green Arrow",1548],["Green Arrow Vol. 3: Harrow","TPB","","TPB","Green Arrow",1547],["Green Arrow Vol. 4: The Kill Machine","TPB","","TPB","Green Arrow",1546],["Green Lantern Vol. 1: Sinestro","TPB","","TPB","Green Lantern",1541]
+].map((r,i)=>({n:i+1,t:r[0],i:r[1],v:r[2],k:r[3],f:r[4],img:`img/IMG_${r[5]}.jpg`,y:!!r[6]}));
+
+const $=id=>document.getElementById(id);
+const KINDS=["Regular","Variant","3D Cover","TPB"], on=new Set(KINDS);
+[...new Set(D.map(d=>d.f))].sort().forEach(f=>$("fam").add(new Option(f,f)));
+KINDS.forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=`${k} (${D.filter(d=>d.k==k).length})`;b.setAttribute("aria-pressed","true");
+  b.onclick=()=>{on.has(k)?on.delete(k):on.add(k);b.setAttribute("aria-pressed",on.has(k));draw()};$("kinds").append(b)});
+const name=d=>`${d.t} ${d.i==="TPB"?"(TPB)":d.i}${d.v?" — "+d.v:""}`;
+function draw(){
+  const q=$("q").value.toLowerCase().trim(), f=$("fam").value, h=$("nolg").checked;
+  let r=D.filter(d=>on.has(d.k)&&(!f||d.f==f)&&(!h||!d.y)&&(!q||name(d).toLowerCase().includes(q)));
+  if($("sort").value=="t")r=[...r].sort((a,b)=>a.t.localeCompare(b.t)||parseFloat(a.i.slice(1))-parseFloat(b.i.slice(1)));
+  $("count").textContent=`${r.length} / ${D.length}`;
+  $("grid").innerHTML=r.length?r.map(d=>`<article class="card" data-n="${d.n}"><img loading="lazy" src="${d.img}" alt="${name(d)}"><div class="meta"><div class="no">#${d.n}</div><div class="t">${d.t} ${d.i==="TPB"?"":d.i}</div><div class="tags"><span class="tag">${d.k}</span>${d.v&&d.k!=="3D Cover"?`<span class="tag">${d.v}</span>`:""}${d.y?'<span class="tag">DC You 2015</span>':""}</div></div></article>`).join(""):'<p class="empty">No matches.</p>';
+}
+["q","fam","nolg","sort"].forEach(id=>$(id).addEventListener("input",draw));
+$("grid").onclick=e=>{const c=e.target.closest(".card");if(!c)return;const d=D[c.dataset.n-1];$("big").src=d.img;$("big").alt=name(d);$("cap").textContent=`#${d.n} · ${name(d)}`;$("dlg").showModal()};
+$("dlg").onclick=()=>$("dlg").close();
+draw();
+</script>
+</body>
+</html>
