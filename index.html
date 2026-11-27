@@ -309,7 +309,7 @@ const KN={R:"Regular",V:"Variant","3":"3D Cover",T:"TPB"}, SN={N:"New 52",Y:"DC 
 const D=RAW.split("\n").map((l,i)=>{const[p,t,is,v,k,pub,s]=l.split("|");return{n:i+1,t,i:is,v,k:KN[k],pub,s,img:`img/IMG_${p}.jpg`}});
 
 const $=id=>document.getElementById(id), esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
-const KINDS=Object.values(KN), on=new Set(KINDS);
+const KINDS=["Regular","Variant","3D Cover","TPB"], on=new Set(KINDS);
 [...new Set(D.map(d=>d.pub))].sort().forEach(p=>$("pub").add(new Option(`${p} (${D.filter(d=>d.pub==p).length})`,p)));
 [...$("era").options].forEach(o=>{if(o.value)o.text+=` (${D.filter(d=>o.value.includes(d.s)).length})`});
 KINDS.forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=`${k} (${D.filter(d=>d.k==k).length})`;b.setAttribute("aria-pressed","true");
