@@ -44,14 +44,6 @@ dialog p{color:#fff;text-align:center;margin:8px 0 0}
 <div class="bar"><div class="bar-in">
 <input type="search" id="q" placeholder="Search title or issue..." aria-label="Search">
 <select id="pub" aria-label="Publisher"><option value="">All publishers</option></select>
-<select id="era" aria-label="New 52 status">
-<option value="">All eras</option>
-<option value="NY">New 52 era (incl. DC You)</option>
-<option value="N">New 52</option>
-<option value="Y">DC You 2015 (no New 52 logo)</option>
-<option value="U">Unsure / Convergence</option>
-<option value="X">Not New 52</option>
-</select>
 <div class="chips" id="kinds"></div>
 <select id="sort" aria-label="Sort"><option value="n">Photo order</option><option value="t">Title A&ndash;Z</option></select>
 <span id="count"></span>
@@ -310,19 +302,18 @@ const D=RAW.split("\n").map((l,i)=>{const[p,t,is,v,k,pub,s]=l.split("|");return{
 const $=id=>document.getElementById(id), esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 const KINDS=["Regular","Variant","3D Cover","TPB"], on=new Set(KINDS);
 [...new Set(D.map(d=>d.pub))].sort().forEach(p=>$("pub").add(new Option(`${p} (${D.filter(d=>d.pub==p).length})`,p)));
-[...$("era").options].forEach(o=>{if(o.value)o.text+=` (${D.filter(d=>o.value.includes(d.s)).length})`});
 KINDS.forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=`${k} (${D.filter(d=>d.k==k).length})`;b.setAttribute("aria-pressed","true");
   b.onclick=()=>{on.has(k)?on.delete(k):on.add(k);b.setAttribute("aria-pressed",on.has(k));draw()};$("kinds").append(b)});
 const name=d=>`${d.t} ${d.i==="TPB"?"(TPB)":d.i}${d.v?" — "+d.v:""}`;
 function draw(){
-  const q=$("q").value.toLowerCase().trim(), p=$("pub").value, e=$("era").value;
-  let r=D.filter(d=>on.has(d.k)&&(!p||d.pub==p)&&(!e||e.includes(d.s))&&(!q||(name(d)+" "+d.pub).toLowerCase().includes(q)));
+  const q=$("q").value.toLowerCase().trim(), p=$("pub").value;
+  let r=D.filter(d=>on.has(d.k)&&(!p||d.pub==p)&&(!q||(name(d)+" "+d.pub).toLowerCase().includes(q)));
   if($("sort").value=="t")r=[...r].sort((a,b)=>a.t.localeCompare(b.t)||parseFloat(a.i.slice(1))-parseFloat(b.i.slice(1)));
   $("count").textContent=`${r.length} / ${D.length}`;
-  $("grid").innerHTML=r.length?r.map(d=>`<article class="card" data-n="${d.n}"><img loading="lazy" src="${d.img}" alt="${esc(name(d))}"><div class="meta"><div class="no">#${d.n} · ${d.pub}</div><div class="t">${esc(d.t)} ${d.i==="TPB"?"":esc(d.i)}</div><div class="tags"><span class="tag s-${d.s}">${SN[d.s]}</span><span class="tag">${d.k}</span>${d.v&&d.k!=="3D Cover"?`<span class="tag">${esc(d.v)}</span>`:""}</div></div></article>`).join(""):'<p class="empty">No matches.</p>';
+  $("grid").innerHTML=r.length?r.map(d=>`<article class="card" data-n="${d.n}"><img loading="lazy" src="${d.img}" alt="${esc(name(d))}"><div class="meta"><div class="no">#${d.n} · ${d.pub}</div><div class="t">${esc(d.t)} ${d.i==="TPB"?"":esc(d.i)}</div><div class="tags"><span class="tag">${d.k}</span>${d.v&&d.k!=="3D Cover"?`<span class="tag">${esc(d.v)}</span>`:""}</div></div></article>`).join(""):'<p class="empty">No matches.</p>';
 }
-["q","pub","era","sort"].forEach(id=>$(id).addEventListener("input",draw));
-$("grid").onclick=e=>{const c=e.target.closest(".card");if(!c)return;const d=D[c.dataset.n-1];$("big").src=d.img;$("big").alt=name(d);$("cap").textContent=`#${d.n} · ${name(d)} · ${d.pub} · ${SN[d.s]}`;$("dlg").showModal()};
+["q","pub","sort"].forEach(id=>$(id).addEventListener("input",draw));
+$("grid").onclick=e=>{const c=e.target.closest(".card");if(!c)return;const d=D[c.dataset.n-1];$("big").src=d.img;$("big").alt=name(d);$("cap").textContent=`#${d.n} · ${name(d)} · ${d.pub}`;$("dlg").showModal()};
 $("dlg").onclick=()=>$("dlg").close();
 draw();
 </script>
